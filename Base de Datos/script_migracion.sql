@@ -1,6 +1,7 @@
 drop table if exists clientes;
 drop table if exists hoteles;
 drop table if exists regimenes;
+drop table if exists tipos_de_habitacion;
 
 -- clientes
 create table clientes (
@@ -70,3 +71,21 @@ select
 from gd_esquema.Maestra
 group by Regimen_Descripcion,
   Regimen_Precio;
+
+-- tipo de habitacion
+create table tipos_de_habitacion (
+  tipo_codigo int NOT NULL PRIMARY KEY IDENTITY(1,1),
+  descripcion nvarchar(255),
+  porcentual numeric(18,2)
+);
+set identity_insert tipos_de_habitacion on;
+insert into tipos_de_habitacion (tipo_codigo, descripcion, porcentual)
+select
+  Habitacion_Tipo_Codigo as tipo_codigo,
+  Habitacion_Tipo_Descripcion as descripcion,
+  Habitacion_Tipo_Porcentual as porcentual
+from gd_esquema.Maestra
+group by Habitacion_Tipo_Codigo,
+  Habitacion_Tipo_Descripcion,
+  Habitacion_Tipo_Porcentual;
+set identity_insert tipos_de_habitacion off;
