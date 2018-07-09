@@ -1,4 +1,5 @@
 drop table if exists clientes;
+drop table if exists habitaciones;
 drop table if exists hoteles;
 drop table if exists regimenes;
 drop table if exists tipos_de_habitacion;
@@ -32,6 +33,10 @@ select
   Cliente_Nacionalidad as nacionalidad
 from gd_esquema.Maestra;
 
+alter table clientes
+add telefono nvarchar(255),
+    localidad nvarchar(255);
+
 -- hoteles
 create table hoteles (
   calle nvarchar(255),
@@ -57,6 +62,13 @@ group by
   Hotel_Recarga_Estrella,
   Hotel_CantEstrella;
 
+alter table hoteles
+add nombre nvarchar(255),
+    fecha_creacion datetime,
+    mail nvarchar(255),
+    telefono nvarchar(255),
+    pais nvarchar(255);
+
 -- regimenes
 create table regimenes (
   descripcion nvarchar(255),
@@ -71,6 +83,9 @@ select
 from gd_esquema.Maestra
 group by Regimen_Descripcion,
   Regimen_Precio;
+
+alter table regimenes
+add estado bit;
 
 -- tipo de habitacion
 create table tipos_de_habitacion (
@@ -89,3 +104,54 @@ group by Habitacion_Tipo_Codigo,
   Habitacion_Tipo_Descripcion,
   Habitacion_Tipo_Porcentual;
 set identity_insert tipos_de_habitacion off;
+
+alter table tipos_de_habitacion
+add cant_huespedes int;
+
+-- cant_huespedes para calculo de precios...
+update tipos_de_habitacion
+set cant_huespedes = 1
+where tipo_codigo = 1001;
+update tipos_de_habitacion
+set cant_huespedes = 2
+where tipo_codigo = 1002;
+update tipos_de_habitacion
+set cant_huespedes = 3
+where tipo_codigo = 1003;
+update tipos_de_habitacion
+set cant_huespedes = 4
+where tipo_codigo = 1004;
+update tipos_de_habitacion
+set cant_huespedes = 5
+where tipo_codigo = 1005;
+
+-- habitaciones
+
+create table habitaciones (
+  id_hotel int,
+  tipo_codigo int,
+  frente nvarchar(50),
+  numero numeric(18,0),
+  piso numeric(18,0),
+  id_habitacion int NOT NULL PRIMARY KEY IDENTITY(1,1),
+  FOREIGN KEY (id_hotel) REFERENCES hoteles(id_hotel),
+  FOREIGN KEY (tipo_codigo) REFERENCES tipos_de_habitacion(tipo_codigo),
+);
+
+insert into habitaciones
+select
+  h.id_hotel,
+  Habitacion_Tipo_Codigo as tipo_codigo,
+  Habitacion_Frente as frente,
+  Habitacion_Numero as numero,
+  Habitacion_Piso as piso
+from gd_esquema.Maestra
+join hoteles h on (
+  Hotel_Ciudad = h.ciudad and
+  Hotel_Calle = h.calle and
+  Hotel_Nro_Calle = h.nro_calle)
+GROUP by h.id_hotel,
+  Habitacion_Tipo_Codigo,
+  Habitacion_Frente,
+  Habitacion_Numero,
+  Habitacion_Piso;
