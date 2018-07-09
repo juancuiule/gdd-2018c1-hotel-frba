@@ -1,8 +1,11 @@
 drop table if exists clientes;
 drop table if exists habitaciones;
+drop table if exists regimenes_por_hotel;
+
 drop table if exists hoteles;
 drop table if exists regimenes;
 drop table if exists tipos_de_habitacion;
+
 
 -- clientes
 create table clientes (
@@ -155,3 +158,28 @@ GROUP by h.id_hotel,
   Habitacion_Frente,
   Habitacion_Numero,
   Habitacion_Piso;
+
+-- regimenes por hotel
+
+create table regimenes_por_hotel (
+  id_hotel int,
+  id_regimen int,
+  id int PRIMARY KEY NOT NULL IDENTITY(1,1),
+  FOREIGN KEY (id_hotel) REFERENCES hoteles(id_hotel),
+  FOREIGN KEY (id_regimen) REFERENCES regimenes(id_regimen),
+);
+
+insert into regimenes_por_hotel
+select
+  h.id_hotel,
+  r.id_regimen
+from gd_esquema.Maestra
+join hoteles h on (
+  Hotel_Calle = h.calle and
+  Hotel_Ciudad = h.ciudad and
+  Hotel_Nro_Calle = h.nro_calle
+)
+join regimenes r on (
+  Regimen_Descripcion = r.descripcion and
+  Regimen_Precio = r.precio
+);
