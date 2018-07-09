@@ -1,4 +1,4 @@
-// clientes
+-- clientes
 drop table if exists clientes;
 create table clientes (
   pasaporte_nro numeric(18,0),
@@ -29,6 +29,38 @@ select
 from gd_esquema.Maestra;
 
 alter table clientes
-add telefono nvarchar(255);
-alter table clientes
-add localidad nvarchar(255);
+add telefono nvarchar(255),
+    localidad nvarchar(255);
+
+-- hoteles
+drop table if exists hoteles;
+create table hoteles (
+  calle nvarchar(255),
+  ciudad nvarchar(255),
+  nro_calle numeric(18,0),
+  recarga_estrellas numeric(18,0),
+  cant_estrellas numeric(18,0),
+  id_hotel int NOT NULL PRIMARY KEY IDENTITY(1,1)
+);
+
+insert into hoteles
+select
+  Hotel_Calle as calle,
+  Hotel_Ciudad as ciudad,
+  Hotel_Nro_Calle  as nro_calle,
+  Hotel_Recarga_Estrella as recarga_estrellas,
+  Hotel_CantEstrella as cant_estrellas
+from gd_esquema.Maestra
+group by
+  Hotel_Calle,
+  Hotel_Ciudad,
+  Hotel_Nro_Calle,
+  Hotel_Recarga_Estrella,
+  Hotel_CantEstrella;
+
+alter table hoteles
+add nombre nvarchar(255),
+    fecha_creacion datetime,
+    mail nvarchar(255),
+    telefono nvarchar(255),
+    pais nvarchar(255);
