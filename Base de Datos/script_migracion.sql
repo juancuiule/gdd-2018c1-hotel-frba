@@ -1,7 +1,10 @@
 drop table if exists clientes;
 drop table if exists habitaciones;
 drop table if exists regimenes_por_hotel;
+drop table estados_por_reserva;
 
+drop table if exists reservas;
+drop table if exists estados_de_reservas;
 drop table if exists hoteles;
 drop table if exists regimenes;
 drop table if exists tipos_de_habitacion;
@@ -9,6 +12,7 @@ drop table if exists tipos_de_habitacion;
 
 -- clientes
 create table clientes (
+  id_cliente int NOT NULL PRIMARY KEY IDENTITY(1,1),
   pasaporte_nro numeric(18,0),
   nombre nvarchar(255),
   apellido nvarchar(255),
@@ -18,11 +22,10 @@ create table clientes (
   piso numeric(18,0),
   depto nvarchar(50),
   fecha_nacimiento datetime,
-  nacionalidad nvarchar(255),
-  id_cliente int NOT NULL PRIMARY KEY IDENTITY(1,1)
+  nacionalidad nvarchar(255)
 );
 
-insert into clientes
+insert into clientes (pasaporte_nro, nombre, apellido, mail, calle, nro_calle, piso, depto, fecha_nacimiento, nacionalidad)
 select
   distinct Cliente_Pasaporte_Nro as pasaporte_nro,
   Cliente_Nombre as nombre,
@@ -42,15 +45,15 @@ add telefono nvarchar(255),
 
 -- hoteles
 create table hoteles (
+  id_hotel int NOT NULL PRIMARY KEY IDENTITY(1,1),
   calle nvarchar(255),
   ciudad nvarchar(255),
   nro_calle numeric(18,0),
   recarga_estrellas numeric(18,0),
-  cant_estrellas numeric(18,0),
-  id_hotel int NOT NULL PRIMARY KEY IDENTITY(1,1)
+  cant_estrellas numeric(18,0)
 );
 
-insert into hoteles
+insert into hoteles (calle, ciudad, nro_calle, recarga_estrellas, cant_estrellas)
 select
   Hotel_Calle as calle,
   Hotel_Ciudad as ciudad,
@@ -74,12 +77,12 @@ add nombre nvarchar(255),
 
 -- regimenes
 create table regimenes (
+  id_regimen int NOT NULL PRIMARY KEY IDENTITY(1,1),
   descripcion nvarchar(255),
-  precio numeric(18,2),
-  id_regimen int NOT NULL PRIMARY KEY IDENTITY(1,1)
+  precio numeric(18,2)
 );
 
-insert into regimenes
+insert into regimenes (descripcion, precio)
 select
   Regimen_Descripcion as descripcion,
   Regimen_Precio as precio
@@ -131,17 +134,17 @@ where tipo_codigo = 1005;
 -- habitaciones
 
 create table habitaciones (
+  id_habitacion int NOT NULL PRIMARY KEY IDENTITY(1,1),
   id_hotel int,
   tipo_codigo int,
   frente nvarchar(50),
   numero numeric(18,0),
   piso numeric(18,0),
-  id_habitacion int NOT NULL PRIMARY KEY IDENTITY(1,1),
   FOREIGN KEY (id_hotel) REFERENCES hoteles(id_hotel),
   FOREIGN KEY (tipo_codigo) REFERENCES tipos_de_habitacion(tipo_codigo),
 );
 
-insert into habitaciones
+insert into habitaciones (id_hotel, tipo_codigo, frente, numero, piso)
 select
   h.id_hotel,
   Habitacion_Tipo_Codigo as tipo_codigo,
@@ -153,7 +156,7 @@ join hoteles h on (
   Hotel_Ciudad = h.ciudad and
   Hotel_Calle = h.calle and
   Hotel_Nro_Calle = h.nro_calle)
-GROUP by h.id_hotel,
+group by h.id_hotel,
   Habitacion_Tipo_Codigo,
   Habitacion_Frente,
   Habitacion_Numero,
@@ -162,14 +165,14 @@ GROUP by h.id_hotel,
 -- regimenes por hotel
 
 create table regimenes_por_hotel (
+  id int PRIMARY KEY NOT NULL IDENTITY(1,1),
   id_hotel int,
   id_regimen int,
-  id int PRIMARY KEY NOT NULL IDENTITY(1,1),
   FOREIGN KEY (id_hotel) REFERENCES hoteles(id_hotel),
   FOREIGN KEY (id_regimen) REFERENCES regimenes(id_regimen),
 );
 
-insert into regimenes_por_hotel
+insert into regimenes_por_hotel (id_hotel, id_regimen)
 select
   h.id_hotel,
   r.id_regimen
@@ -182,4 +185,64 @@ join hoteles h on (
 join regimenes r on (
   Regimen_Descripcion = r.descripcion and
   Regimen_Precio = r.precio
-);
+)
+group by h.id_hotel, r.id_regimen;
+
+-- estados de reserva
+create table estados_de_reservas (
+  id_estado int PRIMARY KEY NOT NULL IDENTITY(1,1),
+  estado nvarchar(255)
+)
+
+set identity_insert estados_de_reservas on;
+insert into estados_de_reservas (id_estado, estado)
+values
+  (1, 'Reserva correcta'),
+  (2, 'Reserva modificada'),
+  (3, 'Reserva cancelada por Recepción'),
+  (4, 'Reserva cancelada por Cliente'),
+  (5, 'Reserva cancelada por No-Show'),
+  (6, 'Reserva con ingreso');
+set identity_insert estados_de_reservas off;
+
+-- reservas
+create table reservas (
+  reserva_codigo int PRIMARY KEY NOT NULL IDENTITY(1,1),
+  cant_noches numeric(18,0),
+  fecha_inicio datetime,
+  id_regimen int,
+  FOREIGN KEY (id_regimen) REFERENCES regimenes(id_regimen)
+)
+
+set identity_insert reservas on;
+insert into reservas (reserva_codigo, cant_noches, fecha_inicio, id_regimen)
+select
+  distinct Reserva_Codigo reserva_codigo,
+  Reserva_Cant_Noches cant_noches,
+  Reserva_Fecha_Inicio fecha_inicio,
+  r.id_regimen
+from gd_esquema.Maestra
+join regimenes r on (
+  Regimen_Descripcion = r.descripcion and
+  Regimen_Precio = r.precio
+)
+set identity_insert reservas off;
+
+-- estados_por_reserva
+create table estados_por_reserva (
+  id int PRIMARY KEY NOT NULL IDENTITY(1,1),
+  reserva_codigo int,
+  id_estado int,
+  fecha_modificacion datetime,
+  usuario_modificacion nvarchar(255),
+  FOREIGN KEY (id_estado) REFERENCES estados_de_reservas(id_estado),
+  FOREIGN KEY (reserva_codigo) REFERENCES reservas(reserva_codigo)
+)
+
+insert into estados_por_reserva (reserva_codigo, id_estado, fecha_modificacion, usuario_modificacion)
+select
+  reserva_codigo,
+  1 as id_estado,
+  SYSDATETIME() as fecha_modificacion,
+  'dbo migracion' as usuario_modificacion
+from reservas
