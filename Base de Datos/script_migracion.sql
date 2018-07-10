@@ -307,7 +307,6 @@ select
   'dbo migracion' as usuario_modificacion
 from reservas
 
-
 -- reservas por habitacion
 create table reservas_por_habitacion (
   id int PRIMARY KEY NOT NULL IDENTITY(1,1),
@@ -374,3 +373,61 @@ group by Reserva_Codigo, c.id_cliente;
 --   Estadia_Fecha_Inicio is not null
 -- )
 -- order by Reserva_Codigo
+
+-- consumibles
+create table consumibles (
+  consumible_codigo int PRIMARY KEY NOT NULL IDENTITY(1,1),
+  descripcion nvarchar(255),
+  precio numeric(18,2)
+);
+
+set identity_insert consumibles on;
+insert into consumibles (consumible_codigo, descripcion, precio)
+select distinct
+  Consumible_Codigo as consumible_codigo,
+  Consumible_Descripcion as descripcion,
+  Consumible_Precio as precio
+from gd_esquema.Maestra
+where Consumible_Codigo is not null
+set identity_insert consumibles off;
+
+
+-- facturas
+create table facturas (
+  id_factura int PRIMARY KEY not null IDENTITY(1,1),
+  nro_factura numeric(18,0) not null,
+  fecha_factura datetime not null
+)
+
+insert into facturas (nro_factura, fecha_factura)
+select distinct
+  Factura_Nro,
+  Factura_Fecha
+from gd_esquema.Maestra where Factura_Nro is not null
+
+-- items factura
+create table items_facturas (
+  id_item int PRIMARY KEY NOT NULL IDENTITY(1,1),
+  id_factura int,
+  monto numeric(18,2),
+  cantidad numeric(18,0),
+  descripcion nvarchar(255),
+  FOREIGN KEY (id_factura) REFERENCES facturas(id_factura)
+)
+
+-- insert consumibles en items_facturas
+insert into items_facturas (id_factura, descripcion, monto, cantidad)
+select
+  f.id_factura,
+  Consumible_Descripcion as descripcion,
+  Item_Factura_Cantidad as monto,
+  count(Consumible_Codigo) as cantidad
+from gd_esquema.Maestra
+join facturas f on (
+  f.nro_factura = Factura_Nro
+)
+where Consumible_Codigo is not null
+group by
+  f.id_factura,
+  Consumible_Descripcion,
+  Item_Factura_Cantidad;
