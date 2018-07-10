@@ -1,8 +1,10 @@
-drop table if exists clientes;
 drop table if exists regimenes_por_hotel;
 drop table if exists estados_por_reserva;
 drop table if exists reservas_por_habitacion;
+drop table if exists reservas_por_cliente;
 drop table if exists habitaciones;
+drop table if exists clientes;
+drop table if exists estados_de_cliente;
 
 drop table if exists reservas;
 drop table if exists estados_de_reservas;
@@ -10,6 +12,22 @@ drop table if exists hoteles;
 drop table if exists regimenes;
 drop table if exists tipos_de_habitacion;
 
+drop table if exists #TemporalClientesMailRepetido
+drop table if exists #TemporalClientesPasaporteRepetido
+
+-- estados de cliente
+create table estados_de_cliente (
+  id_estado_cliente int PRIMARY KEY NOT NULL IDENTITY(1,1),
+  descripcion nvarchar(255)
+)
+
+set identity_insert estados_de_cliente on;
+insert into estados_de_cliente (id_estado_cliente, descripcion)
+values (1, 'Habilitado'),
+       (2, 'Inhabilitado por email repetido'),
+       (3, 'Inhabilitado por pasaporte repetido'),
+       (4, 'Inhabilitado por pasaporte y mail repetido');
+set identity_insert estados_de_cliente off;
 
 -- clientes
 create table clientes (
@@ -28,7 +46,8 @@ create table clientes (
 
 insert into clientes (pasaporte_nro, nombre, apellido, mail, calle, nro_calle, piso, depto, fecha_nacimiento, nacionalidad)
 select
-  distinct Cliente_Pasaporte_Nro as pasaporte_nro,
+  distinct
+  Cliente_Pasaporte_Nro as pasaporte_nro,
   Cliente_Nombre as nombre,
   Cliente_Apellido as apellido,
   Cliente_Mail as mail,
@@ -42,7 +61,47 @@ from gd_esquema.Maestra;
 
 alter table clientes
 add telefono nvarchar(255),
-    localidad nvarchar(255);
+    localidad nvarchar(255),
+    id_estado_cliente int not null default 1;
+alter table clientes
+add constraint id_estado_cliente
+  FOREIGN KEY (id_estado_cliente)
+  REFERENCES estados_de_cliente(id_estado_cliente);
+
+-- manejo de clientes con mail o dni repetido
+create table #TemporalClientesMailRepetido (email_repetido nvarchar(255))
+create table #TemporalClientesPasaporteRepetido (pasaporte_repetido numeric(18,0))
+
+insert into #TemporalClientesMailRepetido (email_repetido)
+select distinct
+  m1.Cliente_Mail
+from gd_esquema.Maestra m1, gd_esquema.Maestra m2
+where
+  m1.Cliente_Pasaporte_Nro != m2.Cliente_Pasaporte_Nro and
+  m1.Cliente_Mail = m2.Cliente_Mail
+
+insert into #TemporalClientesPasaporteRepetido (pasaporte_repetido)
+select distinct
+  m1.Cliente_Pasaporte_Nro
+from gd_esquema.Maestra m1, gd_esquema.Maestra m2
+where
+  m1.Cliente_Pasaporte_Nro = m2.Cliente_Pasaporte_Nro and
+  m1.Cliente_Mail != m2.Cliente_Mail
+
+update clientes
+set id_estado_cliente = 2
+where mail in (select email_repetido from #TemporalClientesMailRepetido) and
+  pasaporte_nro not in (select pasaporte_repetido from #TemporalClientesPasaporteRepetido)
+
+update clientes
+set id_estado_cliente = 3
+where pasaporte_nro in (select pasaporte_repetido from #TemporalClientesPasaporteRepetido) and
+  mail not in (select email_repetido from #TemporalClientesMailRepetido)
+
+update clientes
+set id_estado_cliente = 4
+where pasaporte_nro in (select pasaporte_repetido from #TemporalClientesPasaporteRepetido) and
+  mail in (select email_repetido from #TemporalClientesMailRepetido)
 
 -- hoteles
 create table hoteles (
@@ -248,6 +307,7 @@ select
   'dbo migracion' as usuario_modificacion
 from reservas
 
+
 -- reservas por habitacion
 create table reservas_por_habitacion (
   id int PRIMARY KEY NOT NULL IDENTITY(1,1),
@@ -274,3 +334,43 @@ join habitaciones h2 on (
   Habitacion_Numero = h2.numero
 )
 group by Reserva_Codigo, h2.id_habitacion;
+
+-- reserva_por_cliente
+create table reservas_por_cliente (
+  id int PRIMARY KEY NOT NULL IDENTITY(1,1),
+  reserva_codigo int,
+  id_cliente int,
+  FOREIGN KEY (reserva_codigo) REFERENCES reservas(reserva_codigo),
+  FOREIGN KEY (id_cliente) REFERENCES clientes(id_cliente)
+);
+
+insert into reservas_por_cliente (id_cliente, reserva_codigo)
+select
+  c.id_cliente,
+  Reserva_Codigo as reserva_codigo
+from gd_esquema.Maestra
+join clientes c on (
+  Cliente_Pasaporte_Nro = c.pasaporte_nro
+)
+group by Reserva_Codigo, c.id_cliente;
+
+-- estadias
+-- create table estadias (
+--   estadia_codigo int PRIMARY KEY NOT NULL IDENTITY(1,1),
+--   fecha_ingreso datetime,
+--   fecha_salida datetime,
+--   reserva_codigo int,
+--   dias_efectivos numeric(18,0),
+--   dias_noefectivos numeric(18,0),
+--   FOREIGN KEY (reserva_codigo) REFERENCES reservas(reserva_codigo)
+-- );
+
+-- select
+--   distinct Reserva_Codigo as reserva_codigo,
+--   Estadia_Fecha_Inicio as fecha_ingreso
+-- from gd_esquema.Maestra
+-- where (
+--   Estadia_Cant_Noches is not null and
+--   Estadia_Fecha_Inicio is not null
+-- )
+-- order by Reserva_Codigo
