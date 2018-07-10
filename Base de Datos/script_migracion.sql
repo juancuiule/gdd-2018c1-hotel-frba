@@ -1,7 +1,8 @@
 drop table if exists clientes;
-drop table if exists habitaciones;
 drop table if exists regimenes_por_hotel;
-drop table estados_por_reserva;
+drop table if exists estados_por_reserva;
+drop table if exists reservas_por_habitacion;
+drop table if exists habitaciones;
 
 drop table if exists reservas;
 drop table if exists estados_de_reservas;
@@ -246,3 +247,30 @@ select
   SYSDATETIME() as fecha_modificacion,
   'dbo migracion' as usuario_modificacion
 from reservas
+
+-- reservas por habitacion
+create table reservas_por_habitacion (
+  id int PRIMARY KEY NOT NULL IDENTITY(1,1),
+  id_habitacion int,
+  reserva_codigo int,
+  FOREIGN KEY (id_habitacion) REFERENCES habitaciones(id_habitacion),
+  FOREIGN KEY (reserva_codigo) REFERENCES reservas(reserva_codigo)
+);
+
+insert into reservas_por_habitacion (reserva_codigo, id_habitacion)
+select
+  Reserva_Codigo as reserva_codigo,
+  h2.id_habitacion
+from gd_esquema.Maestra
+join hoteles h1 on (
+  Hotel_Calle = h1.calle and
+  Hotel_Ciudad = h1.ciudad and
+  Hotel_Nro_Calle = h1.nro_calle
+)
+join habitaciones h2 on (
+  h1.id_hotel = h2.id_hotel and
+  Habitacion_Piso = h2.piso and
+  Habitacion_Frente = h2.frente and
+  Habitacion_Numero = h2.numero
+)
+group by Reserva_Codigo, h2.id_habitacion;
