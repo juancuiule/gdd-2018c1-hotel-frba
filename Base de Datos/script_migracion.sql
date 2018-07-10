@@ -6,6 +6,10 @@ drop table if exists habitaciones;
 drop table if exists clientes;
 drop table if exists estados_de_cliente;
 
+drop table if exists items_facturas;
+drop table if exists facturas;
+drop table if exists consumibles;
+
 drop table if exists reservas;
 drop table if exists estados_de_reservas;
 drop table if exists hoteles;
@@ -396,13 +400,16 @@ set identity_insert consumibles off;
 create table facturas (
   id_factura int PRIMARY KEY not null IDENTITY(1,1),
   nro_factura numeric(18,0) not null,
-  fecha_factura datetime not null
+  fecha_factura datetime not null,
+  total_factura numeric(18,2),
+  consistente bit not null default 1
 )
 
-insert into facturas (nro_factura, fecha_factura)
+insert into facturas (nro_factura, fecha_factura, total_factura)
 select distinct
   Factura_Nro,
-  Factura_Fecha
+  Factura_Fecha,
+  Factura_Total
 from gd_esquema.Maestra where Factura_Nro is not null
 
 -- items factura
@@ -426,8 +433,35 @@ from gd_esquema.Maestra
 join facturas f on (
   f.nro_factura = Factura_Nro
 )
-where Consumible_Codigo is not null
+where Consumible_Codigo is not null and Factura_Nro is not null
 group by
   f.id_factura,
   Consumible_Descripcion,
   Item_Factura_Cantidad;
+
+-- inset estadias en item_facturas
+insert into items_facturas (id_factura, monto, cantidad, descripcion)
+select
+  f.id_factura,
+  Item_Factura_Cantidad as monto,
+  Item_Factura_Monto as cantidad,
+  'Estadia de reserva: ' + convert(varchar(18),Reserva_Codigo) as descripcion
+from gd_esquema.Maestra
+join facturas f on (
+  f.nro_factura = Factura_Nro
+)
+where Consumible_Codigo is null and
+  Factura_Nro is not null
+
+--  marcar facturas inconsistentes
+update facturas
+set consistente = 0
+where nro_factura in (
+  select f.nro_factura
+  from facturas f
+  join items_facturas it on (
+    it.id_factura = f.id_factura
+  )
+  group by f.nro_factura, f.total_factura
+  having sum(it.monto * it.cantidad) != f.total_factura
+)
