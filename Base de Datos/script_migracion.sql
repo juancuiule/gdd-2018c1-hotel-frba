@@ -9,7 +9,6 @@ drop table if exists estados_de_cliente;
 
 drop table if exists items_facturas;
 drop table if exists facturas;
-drop table if exists consumibles;
 
 drop table if exists estados_de_reservas;
 drop table if exists bajas_temporales_por_hotel;
@@ -17,6 +16,7 @@ drop table if exists regimenes_por_hotel;
 drop table if exists hoteles;
 drop table if exists tipos_de_habitacion;
 drop table if exists consumible_por_estadia;
+drop table if exists consumibles;
 drop table if exists estadias;
 drop table if exists reservas;
 drop table if exists regimenes;
@@ -43,7 +43,8 @@ insert into roles (id_rol, nombre)
 values
   (1, 'Administrador'),
   (2, 'Recepcionista'),
-  (3, 'Guest')
+  (3, 'Guest'),
+  (4, 'Administrador General')
 set identity_insert roles off;
 
 -- funcionalidades
@@ -93,7 +94,10 @@ values
   (2, 9), -- Recepcionista - Registrar Estadia
   (2, 10), -- Recepcionista - Registrar Consumibles
   (2, 11), -- Recepcionista- Facturar Estadia
-  (1, 12); -- Admin - Listado Estadistico
+  (1, 12), -- Admin - Listado Estadistico
+  (4, 1), (4, 2), (4, 3), (4, 4), (4, 5),
+  (4, 6), (4, 7), (4, 8), (4, 9), (4, 10),
+  (4, 11), (4, 12); -- Admin General - Todo
 
 -- estados de cliente
 create table estados_de_cliente (
