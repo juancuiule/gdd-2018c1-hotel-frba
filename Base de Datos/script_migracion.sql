@@ -4,6 +4,7 @@ drop table if exists reservas_por_habitacion;
 drop table if exists reservas_por_cliente;
 drop table if exists habitaciones;
 drop table if exists clientes;
+drop table if exists tipos_de_identificacion;
 drop table if exists estados_de_cliente;
 
 drop table if exists items_facturas;
@@ -70,7 +71,6 @@ create table funcionalidades_por_rol (
   FOREIGN KEY (id_funcionalidad) REFERENCES funcionalidades(id_funcionalidad)
 )
 
-set identity_insert funcionalidades_por_rol on;
 insert into funcionalidades_por_rol (id_rol, id_funcionalidad)
 values
   (1, 1), -- Admin - ABM Rol
@@ -87,7 +87,6 @@ values
   (2, 10), -- Recepcionista - Registrar Consumibles
   (2, 11), -- Recepcionista- Facturar Estadia
   (1, 12); -- Admin - Listado Estadistico
-set identity_insert funcionalidades_por_rol off;
 
 -- estados de cliente
 create table estados_de_cliente (
@@ -103,10 +102,26 @@ values (1, 'Habilitado'),
        (4, 'Inhabilitado por pasaporte y mail repetido');
 set identity_insert estados_de_cliente off;
 
+-- tipos_de_identificacion
+create table tipos_de_identificacion (
+  tipo_identificacion int PRIMARY KEY NOT NULL IDENTITY(1,1),
+  descripcion nvarchar(255)
+)
+
+set identity_insert tipos_de_identificacion on;
+insert into tipos_de_identificacion (tipo_identificacion, descripcion)
+values
+  (1, 'Pasaporte'),
+  (2, 'DNI'),
+  (3, 'LC'),
+  (4, 'LE');
+set identity_insert tipos_de_identificacion off;
+
 -- clientes
 create table clientes (
   id_cliente int NOT NULL PRIMARY KEY IDENTITY(1,1),
-  pasaporte_nro numeric(18,0),
+  nro_identificacion numeric(18,0),
+  tipo_identificacion int,
   nombre nvarchar(255),
   apellido nvarchar(255),
   mail nvarchar(255),
@@ -115,13 +130,15 @@ create table clientes (
   piso numeric(18,0),
   depto nvarchar(50),
   fecha_nacimiento datetime,
-  nacionalidad nvarchar(255)
+  nacionalidad nvarchar(255),
+  FOREIGN KEY (tipo_identificacion) REFERENCES tipos_de_identificacion(tipo_identificacion)
 );
 
-insert into clientes (pasaporte_nro, nombre, apellido, mail, calle, nro_calle, piso, depto, fecha_nacimiento, nacionalidad)
+insert into clientes (nro_identificacion, tipo_identificacion, nombre, apellido, mail, calle, nro_calle, piso, depto, fecha_nacimiento, nacionalidad)
 select
   distinct
-  Cliente_Pasaporte_Nro as pasaporte_nro,
+  Cliente_Pasaporte_Nro as nro_identificacion,
+  1 as tipo_identificacion,
   Cliente_Nombre as nombre,
   Cliente_Apellido as apellido,
   Cliente_Mail as mail,
@@ -165,16 +182,16 @@ where
 update clientes
 set id_estado_cliente = 2
 where mail in (select email_repetido from #TemporalClientesMailRepetido) and
-  pasaporte_nro not in (select pasaporte_repetido from #TemporalClientesPasaporteRepetido)
+  nro_identificacion not in (select pasaporte_repetido from #TemporalClientesPasaporteRepetido)
 
 update clientes
 set id_estado_cliente = 3
-where pasaporte_nro in (select pasaporte_repetido from #TemporalClientesPasaporteRepetido) and
+where nro_identificacion in (select pasaporte_repetido from #TemporalClientesPasaporteRepetido) and
   mail not in (select email_repetido from #TemporalClientesMailRepetido)
 
 update clientes
 set id_estado_cliente = 4
-where pasaporte_nro in (select pasaporte_repetido from #TemporalClientesPasaporteRepetido) and
+where nro_identificacion in (select pasaporte_repetido from #TemporalClientesPasaporteRepetido) and
   mail in (select email_repetido from #TemporalClientesMailRepetido)
 
 -- hoteles
@@ -423,7 +440,7 @@ select
   Reserva_Codigo as reserva_codigo
 from gd_esquema.Maestra
 join clientes c on (
-  Cliente_Pasaporte_Nro = c.pasaporte_nro
+  Cliente_Pasaporte_Nro = c.nro_identificacion
 )
 group by Reserva_Codigo, c.id_cliente;
 
