@@ -15,8 +15,9 @@ namespace FrbaHotel {
 
         public SQL_Connector() {
             try {
-                // conection = new SqlConnection(@"Data source=.\SQLEXPRESS; Initial Catalog=GD1C2018;");
-                // conection.Open();
+                conection = new SqlConnection(@"Data source=localhost\SQLSERVER2012; Initial Catalog=GD1C2018;user=gdHotel2018;password=gd2018");
+                conection.Open();
+                Console.WriteLine("Conexión a la BD correcta");
             } catch (Exception e) {
                 MessageBox.Show(e.ToString());
                 MessageBox.Show("Hubo un error al conectarse con la BD");

@@ -35,6 +35,7 @@ namespace FrbaHotel.Login {
         }
 
         private void button1_Click(object sender, EventArgs e) {
+            DB_Hoteles.mostrarHoteles();
             Console.WriteLine("Intento de login para: " + this.username + " con password: " + this.password);
             Boolean success = DB_Hoteles.loginUsuario(this.username, this.password);
             if (success)
@@ -42,6 +43,7 @@ namespace FrbaHotel.Login {
                 Console.WriteLine("La combinacion fue: " + (success ? "correcta" : "incorrecta"));
                 this.Hide();
                 MenuPrincipal.MenuPrincipal menu = new MenuPrincipal.MenuPrincipal("Empleado");
+                DB_Hoteles.mostrarHoteles();
                 menu.Show();
             }
             else
