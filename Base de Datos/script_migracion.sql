@@ -1,36 +1,3 @@
-drop table if exists regimenes_por_hotel;
-drop table if exists estados_por_reserva;
-drop table if exists reservas_por_habitacion;
-drop table if exists reservas_por_cliente;
-drop table if exists habitaciones;
-drop table if exists clientes;
-drop table if exists tipos_de_identificacion;
-drop table if exists estados_de_cliente;
-
-drop table if exists items_facturas;
-drop table if exists facturas;
-
-drop table if exists estados_de_reservas;
-drop table if exists bajas_temporales_por_hotel;
-drop table if exists regimenes_por_hotel;
-drop table if exists hoteles;
-drop table if exists tipos_de_habitacion;
-drop table if exists consumible_por_estadia;
-drop table if exists consumibles;
-drop table if exists estadias;
-drop table if exists reservas;
-drop table if exists regimenes;
-
-drop table if exists #TemporalClientesMailRepetido
-drop table if exists #TemporalClientesPasaporteRepetido
-drop table if exists #ReservasConIngreso
-drop table if exists #ReservasCorruptasFacturaFutura
-drop table if exists #ReservasCorrectas
-
-drop table if exists funcionalidades_por_rol;
-drop table if exists roles;
-drop table if exists funcionalidades;
-
 -- roles
 create table roles (
   id_rol int PRIMARY KEY NOT NULL IDENTITY(1,1),
@@ -554,7 +521,7 @@ create table consumible_por_estadia (
   FOREIGN KEY (estadia_codigo) REFERENCES estadias(estadia_codigo)
 )
 
-insert into consumible_por_estadia
+insert into consumible_por_estadia (estadia_codigo, consumible_codigo, cantidad)
 select
   e.estadia_codigo,
   Consumible_Codigo as consumible_codigo,
@@ -607,7 +574,8 @@ where Consumible_Codigo is not null and Factura_Nro is not null
 group by
   f.id_factura,
   Consumible_Descripcion,
-  Item_Factura_Cantidad;
+  Item_Factura_Cantidad,
+  Item_Factura_Monto;
 
 -- inset estadias en item_facturas
 insert into items_facturas (id_factura, monto, cantidad, descripcion)
