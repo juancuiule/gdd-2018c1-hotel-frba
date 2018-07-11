@@ -11,14 +11,21 @@ drop table if exists items_facturas;
 drop table if exists facturas;
 drop table if exists consumibles;
 
-drop table if exists reservas;
 drop table if exists estados_de_reservas;
+drop table if exists bajas_temporales_por_hotel;
+drop table if exists regimenes_por_hotel;
 drop table if exists hoteles;
-drop table if exists regimenes;
 drop table if exists tipos_de_habitacion;
+drop table if exists consumible_por_estadia;
+drop table if exists estadias;
+drop table if exists reservas;
+drop table if exists regimenes;
 
 drop table if exists #TemporalClientesMailRepetido
 drop table if exists #TemporalClientesPasaporteRepetido
+drop table if exists #ReservasConIngreso
+drop table if exists #ReservasCorruptasFacturaFutura
+drop table if exists #ReservasCorrectas
 
 drop table if exists funcionalidades_por_rol;
 drop table if exists roles;
@@ -201,7 +208,8 @@ create table hoteles (
   ciudad nvarchar(255),
   nro_calle numeric(18,0),
   recarga_estrellas numeric(18,0),
-  cant_estrellas numeric(18,0)
+  cant_estrellas numeric(18,0),
+  habilitado bit default 1
 );
 
 insert into hoteles (calle, ciudad, nro_calle, recarga_estrellas, cant_estrellas)
@@ -225,6 +233,16 @@ add nombre nvarchar(255),
     mail nvarchar(255),
     telefono nvarchar(255),
     pais nvarchar(255);
+
+-- bajas_temporales_por_hotel
+create table bajas_temporales_por_hotel (
+  id_baja int PRIMARY KEY NOT NULL IDENTITY(1,1),
+  id_hotel int,
+  fecha_inicio datetime default SYSDATETIME(),
+  fecha_fin datetime,
+  descripcion nvarchar(255),
+  FOREIGN KEY (id_hotel) REFERENCES hoteles(id_hotel)
+)
 
 -- regimenes
 create table regimenes (
@@ -350,10 +368,11 @@ insert into estados_de_reservas (id_estado, estado)
 values
   (1, 'Reserva correcta'),
   (2, 'Reserva modificada'),
-  (3, 'Reserva cancelada por Recepción'),
+  (3, 'Reserva cancelada por Recepcion'),
   (4, 'Reserva cancelada por Cliente'),
   (5, 'Reserva cancelada por No-Show'),
-  (6, 'Reserva con ingreso');
+  (6, 'Reserva con ingreso'),
+  (7, 'Reserva inhabilitada por datos corruptos');
 set identity_insert estados_de_reservas off;
 
 -- reservas
@@ -390,13 +409,52 @@ create table estados_por_reserva (
   FOREIGN KEY (reserva_codigo) REFERENCES reservas(reserva_codigo)
 )
 
-insert into estados_por_reserva (reserva_codigo, id_estado, fecha_modificacion, usuario_modificacion)
+insert into estados_por_reserva (reserva_codigo, fecha_modificacion, usuario_modificacion)
 select
   reserva_codigo,
-  1 as id_estado,
   SYSDATETIME() as fecha_modificacion,
   'dbo migracion' as usuario_modificacion
 from reservas
+
+-- reservas con ingreso (facturadas)
+create table #ReservasConIngreso (reserva_codigo int)
+insert into #ReservasConIngreso (reserva_codigo)
+select distinct
+  Reserva_Codigo
+from gd_esquema.Maestra
+where Factura_Nro is not null and
+  Factura_Fecha - Estadia_Fecha_Inicio > Estadia_Cant_Noches and
+  Estadia_Fecha_Inicio < SYSDATETIME() and
+  Factura_Fecha < SYSDATETIME()
+
+-- reserva con factura del futuro
+create table #ReservasCorruptasFacturaFutura (reserva_codigo int)
+insert into #ReservasCorruptasFacturaFutura (reserva_codigo)
+select distinct
+  Reserva_Codigo
+from gd_esquema.Maestra
+where Factura_Fecha > SYSDATETIME()
+
+-- reserva correcta
+create table #ReservasCorrectas (reserva_codigo int)
+insert into #ReservasCorrectas (reserva_codigo)
+select distinct
+  Reserva_Codigo
+from gd_esquema.Maestra
+where Reserva_Codigo not in (select reserva_codigo from #ReservasConIngreso) and
+  Reserva_Codigo not in (select reserva_codigo from #ReservasCorruptasFacturaFutura)
+
+update estados_por_reserva
+set id_estado = 6
+where reserva_codigo in (select reserva_codigo from #ReservasConIngreso)
+
+update estados_por_reserva
+set id_estado = 7
+where reserva_codigo in (select reserva_codigo from #ReservasCorruptasFacturaFutura)
+
+update estados_por_reserva
+set id_estado = 1
+where reserva_codigo in (select reserva_codigo from #ReservasCorrectas)
 
 -- reservas por habitacion
 create table reservas_por_habitacion (
@@ -445,25 +503,25 @@ join clientes c on (
 group by Reserva_Codigo, c.id_cliente;
 
 -- estadias
--- create table estadias (
---   estadia_codigo int PRIMARY KEY NOT NULL IDENTITY(1,1),
---   fecha_ingreso datetime,
---   fecha_salida datetime,
---   reserva_codigo int,
---   dias_efectivos numeric(18,0),
---   dias_noefectivos numeric(18,0),
---   FOREIGN KEY (reserva_codigo) REFERENCES reservas(reserva_codigo)
--- );
+create table estadias (
+  estadia_codigo int PRIMARY KEY NOT NULL IDENTITY(1,1),
+  fecha_ingreso datetime,
+  fecha_salida datetime,
+  reserva_codigo int,
+  dias_efectivos numeric(18,0),
+  dias_noefectivos numeric(18,0),
+  FOREIGN KEY (reserva_codigo) REFERENCES reservas(reserva_codigo)
+);
 
--- select
---   distinct Reserva_Codigo as reserva_codigo,
---   Estadia_Fecha_Inicio as fecha_ingreso
--- from gd_esquema.Maestra
--- where (
---   Estadia_Cant_Noches is not null and
---   Estadia_Fecha_Inicio is not null
--- )
--- order by Reserva_Codigo
+insert into estadias (reserva_codigo, fecha_ingreso)
+select distinct
+  Reserva_Codigo as reserva_codigo,
+  Estadia_Fecha_Inicio as fecha_ingreso
+from gd_esquema.Maestra
+where (
+  Estadia_Cant_Noches is not null and
+  Estadia_Fecha_Inicio is not null
+)
 
 -- consumibles
 create table consumibles (
@@ -482,6 +540,27 @@ from gd_esquema.Maestra
 where Consumible_Codigo is not null
 set identity_insert consumibles off;
 
+-- consumible por estadia
+create table consumible_por_estadia (
+  id int PRIMARY KEY NOT NULL IDENTITY(1,1),
+  consumible_codigo int,
+  estadia_codigo int,
+  cantidad numeric(18,0),
+  FOREIGN KEY (consumible_codigo) REFERENCES consumibles(consumible_codigo),
+  FOREIGN KEY (estadia_codigo) REFERENCES estadias(estadia_codigo)
+)
+
+insert into consumible_codigo
+select
+  e.estadia_codigo,
+  Consumible_Codigo as consumible_codigo,
+  count(Consumible_Codigo) as cantidad
+from gd_esquema.Maestra m
+join estadias e on (
+  e.reserva_codigo = m.Reserva_Codigo
+)
+where m.Consumible_Codigo is not null
+group by e.estadia_codigo, m.Consumible_Codigo
 
 -- facturas
 create table facturas (
@@ -515,7 +594,7 @@ select
   f.id_factura,
   Consumible_Descripcion as descripcion,
   Item_Factura_Cantidad as monto,
-  count(Consumible_Codigo) as cantidad
+  Item_Factura_Monto as cantidad
 from gd_esquema.Maestra
 join facturas f on (
   f.nro_factura = Factura_Nro
