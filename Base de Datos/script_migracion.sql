@@ -554,7 +554,7 @@ create table consumible_por_estadia (
   FOREIGN KEY (estadia_codigo) REFERENCES estadias(estadia_codigo)
 )
 
-insert into consumible_codigo
+insert into consumible_por_estadia
 select
   e.estadia_codigo,
   Consumible_Codigo as consumible_codigo,

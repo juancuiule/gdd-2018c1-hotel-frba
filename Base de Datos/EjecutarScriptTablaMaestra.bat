@@ -1,1 +1,1 @@
-sqlcmd -S 192.168.2.108\SQLSERVER2012 -U gdHotel2018 -P gd2018 -i gd_esquema.Schema.sql,gd_esquema.Maestra.Table.sql  -a 32767 -o resultado_output.txt
+sqlcmd -S localhost\SQLSERVER2012 -U gdHotel2018 -P gd2018 -i gd_esquema.Schema.sql,gd_esquema.Maestra.Table.sql  -a 32767 -o resultado_output.txt
