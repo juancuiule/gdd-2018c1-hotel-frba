@@ -19,6 +19,76 @@ drop table if exists tipos_de_habitacion;
 drop table if exists #TemporalClientesMailRepetido
 drop table if exists #TemporalClientesPasaporteRepetido
 
+drop table if exists funcionalidades_por_rol;
+drop table if exists roles;
+drop table if exists funcionalidades;
+
+-- roles
+create table roles (
+  id_rol int PRIMARY KEY NOT NULL IDENTITY(1,1),
+  nombre nvarchar(255),
+  estado bit default 1
+)
+
+set identity_insert roles on;
+insert into roles (id_rol, nombre)
+values
+  (1, 'Administrador'),
+  (2, 'Recepcionista'),
+  (3, 'Guest')
+set identity_insert roles off;
+
+-- funcionalidades
+create table funcionalidades (
+  id_funcionalidad int PRIMARY KEY NOT NULL IDENTITY(1,1),
+  descripcion nvarchar(255)
+)
+
+set identity_insert funcionalidades on;
+insert into funcionalidades (id_funcionalidad, descripcion)
+values
+  (1, 'ABM Rol'),
+  (2, 'ABM Usuario'),
+  (3, 'ABM Cliente'),
+  (4, 'ABM Hotel'),
+  (5, 'ABM Habitacion'),
+  (6, 'ABM Regimen de Estadia'),
+  (7, 'Generar o Modificar Reserva'),
+  (8, 'Cancelar Reserva'),
+  (9, 'Registrar Estadia'),
+  (10, 'Registrar Consumibles'),
+  (11, 'Facturar Estadia'),
+  (12, 'Listado Estadistico');
+set identity_insert funcionalidades off;
+
+-- funcionalidades por rol
+create table funcionalidades_por_rol (
+  id_rol int,
+  id_funcionalidad int,
+  PRIMARY KEY (id_rol, id_funcionalidad),
+  FOREIGN KEY (id_rol) REFERENCES roles(id_rol),
+  FOREIGN KEY (id_funcionalidad) REFERENCES funcionalidades(id_funcionalidad)
+)
+
+set identity_insert funcionalidades_por_rol on;
+insert into funcionalidades_por_rol (id_rol, id_funcionalidad)
+values
+  (1, 1), -- Admin - ABM Rol
+  (1, 2), -- Admin - ABM Usuario
+  (2, 3), -- Recepcionista - ABM Cliente
+  (1, 4), -- Admin - ABM Hotel
+  (1, 5), -- Admin - ABM Habitacion
+  (1, 6), -- Admin - ABM Regimen
+  (2, 7), -- Recepcionista - Generar o Modificar Reserva
+  (3, 7), -- Guest - Generar o Modificar Reserva
+  (2, 8), -- Recepcionista - Cancelar Reserva
+  (3, 8), -- Guest - Cancelar Reserva
+  (2, 9), -- Recepcionista - Registrar Estadia
+  (2, 10), -- Recepcionista - Registrar Consumibles
+  (2, 11), -- Recepcionista- Facturar Estadia
+  (1, 12); -- Admin - Listado Estadistico
+set identity_insert funcionalidades_por_rol off;
+
 -- estados de cliente
 create table estados_de_cliente (
   id_estado_cliente int PRIMARY KEY NOT NULL IDENTITY(1,1),
