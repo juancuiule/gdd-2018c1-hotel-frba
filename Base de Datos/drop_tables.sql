@@ -26,5 +26,5 @@ drop table #ReservasCorrectas
 drop table funcionalidades_por_rol;
 drop table roles;
 drop table funcionalidades;
-drop table usuarios;
 drop table roles_por_usuario;
+drop table usuarios;
