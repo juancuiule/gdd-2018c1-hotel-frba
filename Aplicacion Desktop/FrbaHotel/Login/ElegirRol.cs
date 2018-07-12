@@ -22,5 +22,13 @@ namespace FrbaHotel.Login
             });
             this.comboBox1.SelectedItem = roles.First();
         }
+
+        private void button1_Click(object sender, EventArgs e)
+        {
+            App.rolActual = (Modelos.Rol) this.comboBox1.SelectedItem;
+            // Ahora... chequear si tiene mas de un hotel
+            Console.WriteLine(App.loggedUser.hoteles().Count);
+            
+        }
     }
 }

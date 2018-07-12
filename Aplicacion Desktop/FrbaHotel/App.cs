@@ -13,6 +13,7 @@ namespace FrbaHotel {
         public static Login.LoginForm loginForm;
         public static MenuPrincipal.MenuPrincipal menu;
         public static Modelos.Usuario loggedUser;
+        public static Modelos.Rol rolActual;
 
         public App() {
             InitializeComponent();

@@ -630,3 +630,15 @@ set identity_insert usuarios off;
 
 insert into roles_por_usuario (id_usuario, id_rol)
 values (1, 4), (2, 3), (3, 1), (3, 4);
+
+-- hoteles por usuario
+create table hoteles_por_usuario (
+  id_usuario int,
+  id_hotel int,
+  PRIMARY KEY (id_usuario, id_hotel),
+  FOREIGN KEY (id_usuario) REFERENCES usuarios(id_usuario),
+  FOREIGN KEY (id_hotel) REFERENCES hoteles(id_hotel)
+)
+
+insert into hoteles_por_usuario (id_usuario, id_hotel)
+values (1, 1), (1, 3), (1, 2), (3, 4);

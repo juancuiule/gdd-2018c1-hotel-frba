@@ -72,6 +72,38 @@ namespace FrbaHotel {
             return roles;
         }
 
+        public static List<Modelos.Hotel> getHotelesPara(int id_usuario)
+        {
+            DB_Hoteles.setCmd("select distinct " + 
+                " h.id_hotel, calle, ciudad, nro_calle, recarga_estrellas, cant_estrellas, " +
+                " habilitado, nombre, fecha_creacion, mail, telefono, pais " +
+                " from hoteles_por_usuario hu " +
+                " join hoteles h on (hu.id_hotel = h.id_hotel) where hu.id_usuario =" + id_usuario);
+            reader = cmd.ExecuteReader();
+            List<Modelos.Hotel> hoteles = new List<Modelos.Hotel>();
+            if (reader.HasRows)
+            {
+                while (reader.Read())
+                {
+                    int id_hotel = reader.GetInt32(0);
+                    String calle = reader.GetString(1);
+                    String ciudad = reader.GetString(2);
+                    int nro_calle = reader.GetInt32(3);
+                    int recarga_estrellas = reader.GetInt32(4);
+                    int cant_estrellas = reader.GetInt32(5);
+                    int habilitado = reader.GetInt32(6);
+                    String nombre = reader.GetString(7);
+                    DateTime fecha_creacion = reader.GetDateTime(8);
+                    String mail = reader.GetString(9);
+                    String telefono = reader.GetString(10);
+                    String pais = reader.GetString(11);
+                    hoteles.Add(new Modelos.Hotel(id_hotel, calle, ciudad, nro_calle, recarga_estrellas, cant_estrellas, habilitado, nombre, fecha_creacion, mail, telefono, pais));
+                }
+            }
+            reader.Close();
+            return hoteles;
+        }
+
         // Por ahora solo calles...
         public static void mostrarHoteles()
         {

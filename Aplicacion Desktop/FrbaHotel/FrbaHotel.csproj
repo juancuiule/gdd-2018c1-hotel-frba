@@ -88,6 +88,7 @@
     <Compile Include="Login\ElegirRol.Designer.cs">
       <DependentUpon>ElegirRol.cs</DependentUpon>
     </Compile>
+    <Compile Include="Modelos\Hotel.cs" />
     <Compile Include="Modelos\Rol.cs" />
     <Compile Include="Modelos\Usuario.cs" />
     <Compile Include="SQL_Conector.cs" />

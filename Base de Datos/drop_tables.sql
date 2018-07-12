@@ -27,4 +27,5 @@ drop table funcionalidades_por_rol;
 drop table roles;
 drop table funcionalidades;
 drop table roles_por_usuario;
+drop table hoteles_por_usuario;
 drop table usuarios;

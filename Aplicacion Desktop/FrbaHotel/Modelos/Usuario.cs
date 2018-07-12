@@ -21,5 +21,10 @@ namespace FrbaHotel.Modelos
         {
             return DB_Hoteles.getRolesPara(this.id_usuario);
         }
+
+        public List<Hotel> hoteles()
+        {
+            return DB_Hoteles.getHotelesPara(this.id_usuario);
+        }
     }
 }
