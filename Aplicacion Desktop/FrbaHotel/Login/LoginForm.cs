@@ -13,6 +13,7 @@ namespace FrbaHotel.Login {
         private String username;
         private String password;
         private int intentos;
+        private String userALockear;
 
         public LoginForm() {
             InitializeComponent();
@@ -34,24 +35,34 @@ namespace FrbaHotel.Login {
             this.password = textBox2.Text;
         }
 
+        private void mostrarMensajeUsuarioInhabilitado(String usuario) {
+            MessageBox.Show("Se inhabilito el usuario (" + usuario + ") por multiples intentos fallidos");
+        }
+
         private void button1_Click(object sender, EventArgs e) {
-            DB_Hoteles.mostrarHoteles();
+            if (this.userALockear != this.username) { this.userALockear = this.username; this.intentos = 0; } // Actualizo nombre del user a lockear en caso de intentos fallidos
+            if (this.userALockear == this.username && this.intentos >= 3) { this.mostrarMensajeUsuarioInhabilitado(this.username); return;  }
+
             Console.WriteLine("Intento de login para: " + this.username + " con password: " + this.password);
             Boolean success = DB_Hoteles.loginUsuario(this.username, this.password);
-            if (success)
-            {
-                Console.WriteLine("La combinacion fue: " + (success ? "correcta" : "incorrecta"));
+            Console.WriteLine("La combinacion fue: " + (success ? "correcta" : "incorrecta"));
+            
+            if (success) {
                 this.Hide();
                 MenuPrincipal.MenuPrincipal menu = new MenuPrincipal.MenuPrincipal("Empleado");
-                DB_Hoteles.mostrarHoteles();
                 menu.Show();
             }
-            else
-            {
+            else {
                 this.intentos++;
                 if (this.intentos >= 3)
                 {
-                    MessageBox.Show("Se inhabilito el usuario por multiples intentos fallidos");
+                    DB_Hoteles.inhabilitarUsuario(this.username);
+                    this.mostrarMensajeUsuarioInhabilitado(this.username);
+                    return;
+                }
+                else
+                {
+                    MessageBox.Show("Combinacion incorrecta o usuario inexistente/inhabilitado");
                 }
             }
             
