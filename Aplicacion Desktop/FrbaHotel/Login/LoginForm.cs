@@ -49,9 +49,24 @@ namespace FrbaHotel.Login {
             
             if (userSuccess != null) {
                 App.loggedUser = userSuccess;
-                this.Hide();
-                MenuPrincipal.MenuPrincipal menu = new MenuPrincipal.MenuPrincipal();
-                menu.Show();
+                int cantRoles = App.loggedUser.roles().Count;
+                if (cantRoles == 0)
+                {
+                    MessageBox.Show("Este usuario no tiene roles asignados, proba con otro");
+                    textBox1.ResetText();
+                    textBox2.ResetText();
+                }
+                else if (cantRoles == 1)
+                {
+                    // Sigue de una
+                    this.Hide();
+                    MenuPrincipal.MenuPrincipal menu = new MenuPrincipal.MenuPrincipal();
+                    menu.Show();
+                }
+                else if (cantRoles > 1)
+                {
+                    // Tiene que elegir un rol
+                }
             }
             else {
                 this.intentos++;
