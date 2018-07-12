@@ -16,5 +16,10 @@ namespace FrbaHotel.Modelos
             this.id_rol = id_rol;
             this.nombre = nombre;
         }
+
+        public override string ToString()
+        {
+            return this.nombre;
+        }
     }
 }

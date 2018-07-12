@@ -66,6 +66,9 @@ namespace FrbaHotel.Login {
                 else if (cantRoles > 1)
                 {
                     // Tiene que elegir un rol
+                    this.Hide();
+                    ElegirRol elegirRol = new ElegirRol();
+                    elegirRol.Show();
                 }
             }
             else {

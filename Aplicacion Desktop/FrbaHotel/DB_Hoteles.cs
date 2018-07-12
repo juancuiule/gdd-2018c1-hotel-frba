@@ -29,11 +29,14 @@ namespace FrbaHotel {
                 int id_usuario = reader.GetInt32(0);
                 Console.WriteLine("{0} - {1}", id_usuario, username);
                 reader.Close();
-                
                 return new Modelos.Usuario(id_usuario, username);
             }
-            reader.Close();
-            return null;
+            else
+            {
+                reader.Close();
+                return null;
+            }
+            
         }
 
         public static void inhabilitarUsuario(String username) {
