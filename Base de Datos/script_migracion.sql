@@ -624,8 +624,9 @@ create table roles_por_usuario (
 -- insert usuario superadmin
 set identity_insert usuarios on;
 insert into usuarios (id_usuario, username, password)
-values (1, 'admin', hashbytes('SHA2_256','w23e'));
+values (1, 'admin', hashbytes('SHA2_256','w23e')),
+  (2, 'guest', '');
 set identity_insert usuarios off;
 
 insert into roles_por_usuario (id_usuario, id_rol)
-values (1, 4);
+values (1, 4), (2, 3);
