@@ -18,6 +18,8 @@ namespace FrbaHotel {
             cmd.Connection = connection;
         }
         
+        // USER
+
         public static Modelos.Usuario loginUsuario(String username, String password) {
             DB_Hoteles.setCmd("select id_usuario from usuarios where username='" + username + "' and password = hashbytes('SHA2_256', '" + password + "')");
             reader = cmd.ExecuteReader();
@@ -47,6 +49,24 @@ namespace FrbaHotel {
                 reader.Close();
             }
             reader.Close();
+        }
+
+        public static List<Modelos.Rol> getRolesPara(int id_usuario)
+        {
+            DB_Hoteles.setCmd("select distinct r.id_rol, r.nombre, r.estado from roles_por_usuario ru join roles r on (ru.id_rol = r.id_rol) where r.estado = 1 and id_usuario ='" + id_usuario + "'");
+            reader = cmd.ExecuteReader();
+            List<Modelos.Rol> roles = new List<Modelos.Rol>();
+            if (reader.HasRows)
+            {
+                while (reader.Read())
+                {
+                    int id_rol = reader.GetInt32(0);
+                    String nombre = reader.GetString(1);
+                    roles.Add(new Modelos.Rol(id_rol, nombre));
+                }
+            }
+            reader.Close();
+            return roles;
         }
 
         // Por ahora solo calles...

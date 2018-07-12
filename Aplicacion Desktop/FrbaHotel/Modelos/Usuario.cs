@@ -16,5 +16,10 @@ namespace FrbaHotel.Modelos
             this.id_usuario = id_usuario;
             this.username = username;
         }
+
+        public List<Rol> roles()
+        {
+            return DB_Hoteles.getRolesPara(this.id_usuario);
+        }
     }
 }
