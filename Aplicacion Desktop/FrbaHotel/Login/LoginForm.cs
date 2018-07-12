@@ -44,12 +44,13 @@ namespace FrbaHotel.Login {
             if (this.userALockear == this.username && this.intentos >= 3) { this.mostrarMensajeUsuarioInhabilitado(this.username); return;  }
 
             Console.WriteLine("Intento de login para: " + this.username + " con password: " + this.password);
-            Boolean success = DB_Hoteles.loginUsuario(this.username, this.password);
-            Console.WriteLine("La combinacion fue: " + (success ? "correcta" : "incorrecta"));
+            Modelos.Usuario userSuccess = DB_Hoteles.loginUsuario(this.username, this.password);
+            Console.WriteLine("La combinacion fue: " + (userSuccess != null ? "correcta" : "incorrecta"));
             
-            if (success) {
+            if (userSuccess != null) {
+                App.loggedUser = userSuccess;
                 this.Hide();
-                MenuPrincipal.MenuPrincipal menu = new MenuPrincipal.MenuPrincipal("Empleado");
+                MenuPrincipal.MenuPrincipal menu = new MenuPrincipal.MenuPrincipal();
                 menu.Show();
             }
             else {

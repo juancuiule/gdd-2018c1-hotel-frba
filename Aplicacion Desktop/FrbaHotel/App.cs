@@ -12,6 +12,7 @@ namespace FrbaHotel {
     public partial class App : Form {
         public static Login.LoginForm loginForm;
         public static MenuPrincipal.MenuPrincipal menu;
+        public static Modelos.Usuario loggedUser;
 
         public App() {
             InitializeComponent();
@@ -21,8 +22,9 @@ namespace FrbaHotel {
 
         private void button_huesped(object sender, EventArgs e) {
             Console.WriteLine("Ingresa un Huesped");
+            loggedUser = new Modelos.Usuario(2, "guest"); // user base de guest
             this.Hide();
-            menu = new MenuPrincipal.MenuPrincipal("Huesped");
+            menu = new MenuPrincipal.MenuPrincipal();
             menu.Show();
         }
 

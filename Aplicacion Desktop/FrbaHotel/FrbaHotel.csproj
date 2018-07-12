@@ -82,6 +82,7 @@
       <DependentUpon>App.cs</DependentUpon>
     </Compile>
     <Compile Include="DB_Hoteles.cs" />
+    <Compile Include="Modelos\Usuario.cs" />
     <Compile Include="SQL_Conector.cs" />
     <Compile Include="GenerarModificacionReserva\Form1.cs">
       <SubType>Form</SubType>

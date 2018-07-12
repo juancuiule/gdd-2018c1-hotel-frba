@@ -18,19 +18,20 @@ namespace FrbaHotel {
             cmd.Connection = connection;
         }
         
-        public static Boolean loginUsuario(String username, String password) {
-            Boolean testing = (username == "prueba" && password == "1234");
-            DB_Hoteles.setCmd("select id_usuario, username from usuarios where username='" + username + "' and password = hashbytes('SHA2_256', '" + password + "')");
+        public static Modelos.Usuario loginUsuario(String username, String password) {
+            DB_Hoteles.setCmd("select id_usuario from usuarios where username='" + username + "' and password = hashbytes('SHA2_256', '" + password + "')");
             reader = cmd.ExecuteReader();
             if (reader.HasRows)
             {
                 reader.Read();
-                Console.WriteLine("{0} - {1}", reader.GetInt32(0), reader.GetString(1));
+                int id_usuario = reader.GetInt32(0);
+                Console.WriteLine("{0} - {1}", id_usuario, username);
                 reader.Close();
-                return true;
+                
+                return new Modelos.Usuario(id_usuario, username);
             }
             reader.Close();
-            return testing;
+            return null;
         }
 
         public static void inhabilitarUsuario(String username) {
