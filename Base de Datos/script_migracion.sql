@@ -603,3 +603,29 @@ where nro_factura in (
   group by f.nro_factura, f.total_factura
   having sum(it.monto * it.cantidad) != f.total_factura
 )
+
+-- usuarios
+create table usuarios (
+  id_usuario int PRIMARY KEY NOT NULL IDENTITY(1,1),
+  username nvarchar(50),
+  password nvarchar(255),
+  habilitado bit default 1
+)
+
+-- roles_por_usuario
+create table roles_por_usuario (
+  id_usuario int,
+  id_rol int,
+  PRIMARY KEY (id_usuario, id_rol),
+  FOREIGN KEY (id_usuario) REFERENCES usuarios(id_usuario),
+  FOREIGN KEY (id_rol) REFERENCES roles(id_rol)
+)
+
+-- insert usuario superadmin
+set identity_insert usuarios on;
+insert into usuarios (id_usuario, username, password)
+values (1, 'admin', hashbytes('SHA2_256','w23e'));
+set identity_insert usuarios off;
+
+insert into roles_por_usuario (id_usuario, id_rol)
+values (1, 4);
